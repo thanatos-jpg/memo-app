@@ -13,7 +13,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #171917;
     --surface: #1f221f;
     --ink: #e8e4da;
@@ -23,7 +23,20 @@
     --accent-ink: #10231c;
     --danger: #e0816f;
     --chip: #2a2e2a;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #171917;
+    --surface: #1f221f;
+    --ink: #e8e4da;
+    --muted: #9a968b;
+    --line: #2e332e;
+    --accent: #7fb8a4;
+    --accent-ink: #10231c;
+    --danger: #e0816f;
+    --chip: #2a2e2a;
+    color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -304,3 +317,16 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .detail-note h3 { margin: 0 0 4px; font-size: 0.85rem; color: var(--muted); font-weight: normal; }
 .detail-note p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .detail-meta { margin: 20px 0 0; font-size: 0.8rem; color: var(--muted); }
+
+/* ---------- 確認ダイアログ ---------- */
+#confirmDlg {
+  width: min(86vw, 340px);
+  height: auto;
+  margin: auto;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+.confirm p { margin: 0 0 18px; white-space: pre-wrap; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button { flex: 1; }

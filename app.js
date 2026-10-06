@@ -262,6 +262,17 @@ function render() {
   });
 }
 
+// ---------- 確認ダイアログ(confirm()は環境によって使えないため自前) ----------
+async function askConfirm(msg, okLabel) {
+  const dlg = $('#confirmDlg');
+  $('#confirmMsg').textContent = msg;
+  $('#confirmOk').textContent = okLabel;
+  dlg.returnValue = '';
+  dlg.showModal();
+  await new Promise((resolve) => dlg.addEventListener('close', resolve, { once: true }));
+  return dlg.returnValue === 'ok';
+}
+
 // ---------- シートの開閉(スマホの戻るボタン対応) ----------
 let sheetOpen = false;
 
@@ -283,18 +294,22 @@ function closeSheet() {
   else closeAllDialogs();
 }
 
-window.addEventListener('popstate', () => {
-  if ($('#formDlg').open && state.dirty && !confirm('入力中の内容を破棄しますか？')) {
+window.addEventListener('popstate', async () => {
+  if ($('#formDlg').open && state.dirty) {
+    // 入力中は閉じさせず、確認してから閉じる
     history.pushState({ sheet: 1 }, '');
     sheetOpen = true;
+    if (await askConfirm('入力中の内容を破棄しますか？', '破棄する')) {
+      state.dirty = false;
+      closeSheet();
+    }
     return;
   }
   sheetOpen = false;
-  state.dirty = false;
   closeAllDialogs();
 });
 
-document.querySelectorAll('dialog').forEach((d) =>
+document.querySelectorAll('dialog:not(#confirmDlg)').forEach((d) =>
   d.addEventListener('cancel', (ev) => {
     ev.preventDefault();
     closeSheet();
@@ -434,7 +449,17 @@ async function saveForm(ev) {
 }
 
 // ---------- 書き出し・読み込み ----------
-function download(filename, mime, content) {
+async function download(filename, mime, content) {
+  try {
+    // 閲覧環境(Artifact)ではページからの直接ダウンロードが禁止なので、提供されていればそちらを使う
+    const dl = await window.claude?.use?.('downloads');
+    if (dl) {
+      await dl.save({ filename, data: content });
+      return;
+    }
+  } catch (err) {
+    if (err && err.code === 'declined') return;
+  }
   const url = URL.createObjectURL(new Blob([content], { type: mime }));
   const a = h('a', { href: url, download: filename });
   document.body.append(a);
@@ -558,7 +583,7 @@ function bind() {
   });
   $('#detailDelete').addEventListener('click', async () => {
     const e = byId(state.detailId);
-    if (!e || !confirm('この言葉を削除しますか？\n（元に戻せません）')) return;
+    if (!e || !(await askConfirm('この言葉を削除しますか？\n元に戻せません。', '削除する'))) return;
     if (db) await dbDelete(e.id);
     state.entries.splice(state.entries.indexOf(e), 1);
     if (state.cat !== null && !state.entries.some((x) => x.category === state.cat)) state.cat = null;
