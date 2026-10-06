@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ことば帳</title>
+<meta name="description" content="日々の思考の助けになる言葉を、出典つきで集めて整理するメモアプリ">
+<meta name="theme-color" content="#f6f2ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171917" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ことば帳">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <h1>ことば帳</h1>
+    <span id="count" class="muted"></span>
+    <button type="button" id="menuBtn" class="icon-btn" aria-label="メニュー">⋯</button>
+  </div>
+  <input type="search" id="search" placeholder="言葉・出典・タグ・メモを検索" autocomplete="off" enterkeyhint="search">
+  <nav id="chips" class="chips" aria-label="分野で絞り込み"></nav>
+  <div class="sort-row">
+    <select id="sort" aria-label="並び順">
+      <option value="new">追加が新しい順</option>
+      <option value="old">追加が古い順</option>
+      <option value="updated">更新が新しい順</option>
+      <option value="source">出典名順</option>
+    </select>
+    <span id="resultInfo" class="muted"></span>
+  </div>
+</header>
+
+<main id="list" class="list"></main>
+
+<button type="button" id="fab" class="fab" aria-label="言葉を追加">＋</button>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- 詳細 -->
+<dialog id="detailDlg" aria-labelledby="detailHeading">
+  <div class="sheet-form">
+    <div class="sheet-head">
+      <button type="button" id="detailClose" class="btn-text">閉じる</button>
+      <h2 id="detailHeading">言葉</h2>
+      <button type="button" id="detailEdit" class="btn-primary">編集</button>
+    </div>
+    <div class="sheet-body" id="detailBody"></div>
+    <div class="sheet-foot">
+      <button type="button" id="detailCopy" class="btn-line">引用をコピー</button>
+      <button type="button" id="detailDelete" class="btn-line danger">削除</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 追加・編集 -->
+<dialog id="formDlg" aria-labelledby="formHeading">
+  <form id="entryForm" class="sheet-form" autocomplete="off">
+    <div class="sheet-head">
+      <button type="button" id="formCancel" class="btn-text">キャンセル</button>
+      <h2 id="formHeading">言葉を追加</h2>
+      <button type="submit" class="btn-primary">保存</button>
+    </div>
+    <div class="sheet-body">
+      <div class="field">
+        <label for="fText">言葉・文章 <em class="req">必須</em></label>
+        <textarea id="fText" rows="9" required placeholder="心に残った一文でも、記事まるごとでも。長い文章も保存できます。"></textarea>
+        <div id="fCount" class="counter"></div>
+      </div>
+
+      <fieldset class="group">
+        <legend>出典</legend>
+        <div class="field">
+          <label for="fType">種類</label>
+          <select id="fType">
+            <option value="book">書籍</option>
+            <option value="note">note</option>
+            <option value="paper">論文</option>
+            <option value="web">Web記事</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fTitle">タイトル（書名・記事名） <em class="req">必須</em></label>
+          <input id="fTitle" type="text" required>
+        </div>
+        <div class="field">
+          <label for="fAuthor">著者・発信者</label>
+          <input id="fAuthor" type="text">
+        </div>
+        <div class="field">
+          <label for="fLoc">ページ・章・位置</label>
+          <input id="fLoc" type="text" placeholder="例: p.23 / 第3章 / 12:30">
+        </div>
+        <div class="field">
+          <label for="fUrl">URL</label>
+          <input id="fUrl" type="url" inputmode="url" placeholder="https://">
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>整理</legend>
+        <div class="field">
+          <label>分野</label>
+          <div id="catPicker" class="chips wrap"></div>
+          <input id="fCat" type="text" placeholder="新しい分野を追加（例: 福祉）">
+        </div>
+        <div class="field">
+          <label for="fTags">タグ（話題）</label>
+          <input id="fTags" type="text" placeholder="カンマ区切り 例: 当事者研究, 対話">
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label for="fNote">自分のメモ</label>
+        <textarea id="fNote" rows="4" placeholder="この言葉で考えたこと、現場とのつながりなど"></textarea>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<!-- メニュー -->
+<dialog id="menuDlg" aria-labelledby="menuHeading">
+  <div class="sheet-form">
+    <div class="sheet-head">
+      <span></span>
+      <h2 id="menuHeading">メニュー</h2>
+      <button type="button" id="menuClose" class="btn-text">閉じる</button>
+    </div>
+    <div class="sheet-body">
+      <p id="stats" class="muted"></p>
+      <h3>バックアップ</h3>
+      <p class="muted small">データはこの端末のブラウザ内に保存されます。機種変更や端末間の移動には、書き出し／読み込みを使ってください。</p>
+      <div class="stack">
+        <button type="button" id="exportJson" class="btn-line">JSONで書き出す（バックアップ）</button>
+        <button type="button" id="importJson" class="btn-line">JSONを読み込む</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <h3>書き出し</h3>
+      <div class="stack">
+        <button type="button" id="exportMd" class="btn-line">Markdownで書き出す（分野別）</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- 確認 -->
+<dialog id="confirmDlg" aria-labelledby="confirmMsg">
+  <form method="dialog" class="confirm">
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button value="cancel" class="btn-line">キャンセル</button>
+      <button value="ok" id="confirmOk" class="btn-primary"></button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
